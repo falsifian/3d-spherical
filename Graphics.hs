@@ -14,7 +14,7 @@ set_projection_matrix pos fwd up right =
     -- The camera is sitting at the z pole looking toward the w pole.
     do matrixMode $= Projection
        loadIdentity
-       scale (0.5 :: GLfloat) 0.5 1e-5
+       scale (0.5 :: GLfloat) 0.5 (-1e-5)
 
        -- At this point, the camera is sitting at the z pole looking toward the
        -- w pole.  Above the camera is the y pole, and to the right is the x
@@ -32,7 +32,8 @@ display :: IORef State -> IO ()
 display state_ref = do state <- readIORef state_ref
                        clear [ColorBuffer, DepthBuffer]
                        set_projection_matrix (player_pos state) (player_fwd state) (player_up (state_calc state)) (player_right (state_calc state))
-                       preservingMatrix $ do color (Color3 1 1 1 :: Color3 Double)
+                       preservingMatrix $ do scale4 1 1 1 (-1::Double)
+                                             color (Color3 1 1 1 :: Color3 Double)
                                              sphere bottom_sphere_radius
                        preservingMatrix $ do swap_wz
                                              color (Color3 1 0 0 :: Color3 Double)
@@ -48,6 +49,12 @@ display state_ref = do state <- readIORef state_ref
 
 swap_wz :: IO ()
 swap_wz = (newMatrix ColumnMajor [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0] :: IO (GLmatrix Double)) >>= multMatrix
+
+scale4 :: (MatrixComponent c, Num c) => c -> c -> c -> c -> IO ()
+scale4 x y z w = newGLMatrix ColumnMajor [x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, w] >>= multMatrix
+
+newGLMatrix :: (MatrixComponent c) => MatrixOrder -> [c] -> IO (GLmatrix c)
+newGLMatrix = newMatrix
 
 sphere :: GLdouble -> IO ()
 sphere radius = -- radius is the radius in radians

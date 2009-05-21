@@ -22,7 +22,7 @@ complete_state :: State -> State
 complete_state state@(State { player_pos = pos, player_fwd = fwd }) =
     let up' = V4 0 0 0 1
         right = Math.normalize (cross4 pos fwd up')
-        up = cross4 pos fwd right
+        up = cross4 pos right fwd
     in
     state { state_calc = SC up right }
 
@@ -31,7 +31,7 @@ update = complete_state . move_forward
 
 move_forward :: State -> State
 move_forward state@(State { player_pos = pos, player_fwd = fwd, state_calc = SC { player_up = up, player_right = right } }) =
-    let pos' = normalize (pos @+ fwd .* 1e-2)
-        fwd' = normalize (cross4 pos' right up)
+    let pos' = normalize (pos @+ fwd .* 1e-3)
+        fwd' = normalize (cross4 pos' (V4 0 0 0 1) right)
     in
     state { player_pos = pos', player_fwd = fwd' }

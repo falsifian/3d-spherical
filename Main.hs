@@ -13,9 +13,9 @@ data State = State { player_pos, player_fwd :: Vec4
 main :: IO ()
 main = do args_after_glut <- getArgs >>= initialize program_name
           initialDisplayMode $= [DoubleBuffered, WithDepthBuffer]
-          --depthFunc $= Just Less
           initialWindowSize $= window_size
           window <- createWindow window_title
+          depthFunc $= Just Less
           state_ref <- newIORef initial_state
           displayCallback $= display state_ref
           fix (\f -> modifyIORef state_ref update >> postRedisplay Nothing >> addTimerCallback 50 f)

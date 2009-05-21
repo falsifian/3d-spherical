@@ -22,8 +22,7 @@ main = do args_after_glut <- getArgs >>= initialize program_name
           mainLoop
 
 initial_state :: State
---initial_state = State (Math.normalize (V4 (tan (bottom_sphere_radius + player_height)) 0 0 1)) (V4 0 0 1 0)
-initial_state = State (V4 0 1 0 0) (V4 0 0 1 0)
+initial_state = State (Math.normalize (V4 (tan (bottom_sphere_radius + player_height)) 0 0 (-1))) (V4 0 0 1 0)
 
 set_projection_matrix :: Vec4 -> Vec4 -> IO ()
 set_projection_matrix pos fwd =
@@ -40,9 +39,8 @@ set_projection_matrix pos fwd =
        
        let up' = V4 0 0 0 1
        let right = Math.normalize (cross4 pos fwd up')
-       let up = cross4 pos right fwd
-       --(newMatrix RowMajor ([right, up, pos, fwd] >>= coords) :: IO (GLmatrix Double)) >>= multMatrix
-       (newMatrix RowMajor ([V4 1 0 0 0, V4 0 0 0 1, V4 0 1 0 0, V4 0 0 1 0] >>= coords) :: IO (GLmatrix Double)) >>= multMatrix
+       let up = cross4 pos fwd right
+       (newMatrix RowMajor ([right, up, pos, fwd] >>= coords) :: IO (GLmatrix Double)) >>= multMatrix
 
        matrixMode $= Modelview 0
     where
@@ -52,8 +50,8 @@ display :: IORef State -> IO ()
 display state_ref = do state <- readIORef state_ref
                        clear [ColorBuffer, DepthBuffer]
                        set_projection_matrix (player_pos state) (player_fwd state)
-                       color (Color3 1 1 1 :: Color3 Double)
-                       --sphere bottom_sphere_radius
+                       preservingMatrix $ do color (Color3 1 1 1 :: Color3 Double)
+                                             sphere bottom_sphere_radius
                        preservingMatrix $ do swap_wz
                                              color (Color3 1 0 0 :: Color3 Double)
                                              sphere 0.3

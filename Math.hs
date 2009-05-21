@@ -41,6 +41,6 @@ cross4 (V4 x0 x1 x2 x3) (V4 y0 y1 y2 y3) (V4 z0 z1 z2 z3) =
             x0 * y1 * z2
           - x0 * y2 * z1
           - x1 * y0 * z2
-          + x1 * z2 * y0
+          + x1 * y2 * z0
           + x2 * y0 * z1
-          - x2 * z1 * y0
+          - x2 * y1 * z0

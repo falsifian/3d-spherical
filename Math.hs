@@ -1,5 +1,8 @@
 module Math where
 
+infixl 7 .*, ./
+infixl 6 @+, @-
+
 class Vector v where
 	zvec :: v
 	(.*) :: v -> Double -> v
@@ -10,6 +13,10 @@ class Vector v where
 	a @- b = a @+ b .* (-1)
 	vsum :: [v] -> v
 	vsum = foldl (@+) zvec
+
+class (NormVector v) => IPVector v where
+	(@.) :: v -> v -> Double
+	-- norm should be the one derived from the inner product (@.)
 
 class (Vector v) => NormVector v where
 	norm :: v -> Double
@@ -26,6 +33,9 @@ instance Vector Vec4 where
 	(V4 x0 x1 x2 x3) @+ (V4 y0 y1 y2 y3) = V4 (x0 + y0) (x1 + y1) (x2 + y2) (x3 + y3)
 	(V4 x0 x1 x2 x3) .* a = V4 (x0 * a) (x1 * a) (x2 * a) (x3 * a)
 
+instance IPVector Vec4 where
+	(V4 x0 x1 x2 x3) @. (V4 y0 y1 y2 y3) = (x0 * y0) + (x1 * y1) + (x2 * y2) + (x3 * y3)
+
 instance NormVector Vec4 where
 	normSqr (V4 x0 x1 x2 x3) = x0 ^ 2 + x1 ^ 2 + x2 ^ 2 + x3 ^ 2
 
@@ -33,9 +43,9 @@ cross4 :: Vec4 -> Vec4 -> Vec4 -> Vec4
 cross4 (V4 x0 x1 x2 x3) (V4 y0 y1 y2 y3) (V4 z0 z1 z2 z3) =
     V4
         (det3 x1 x2 x3 y1 y2 y3 z1 z2 z3)
-        (det3 x2 x3 x0 y2 y3 y0 z2 z3 z0)
-        (det3 x3 x0 x1 y3 y0 y1 z3 z0 z1)
-        (det3 x0 x1 x2 y0 y1 y2 z0 z1 z2)
+        (- det3 x0 x2 x3 y0 y2 y3 z0 z2 z3)
+        (det3 x0 x1 x3 y0 y1 y3 z0 z1 z3)
+        (- det3 x0 x1 x2 y0 y1 y2 z0 z1 z2)
     where
         det3 x0 x1 x2 y0 y1 y2 z0 z1 z2 =
             x0 * y1 * z2

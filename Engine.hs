@@ -1,4 +1,9 @@
-module Engine where
+module Engine
+( State(..)
+, StateCalc(..)
+, initial_state
+, update
+) where
 
 import Constants
 import Math
@@ -22,4 +27,11 @@ complete_state state@(State { player_pos = pos, player_fwd = fwd }) =
     state { state_calc = SC up right }
 
 update :: State -> State
-update = id
+update = complete_state . move_forward
+
+move_forward :: State -> State
+move_forward state@(State { player_pos = pos, player_fwd = fwd, state_calc = SC { player_up = up, player_right = right } }) =
+    let pos' = normalize (pos @+ fwd .* 1e-2)
+        fwd' = normalize (cross4 pos' right up)
+    in
+    state { player_pos = pos', player_fwd = fwd' }

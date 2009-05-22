@@ -13,7 +13,6 @@ main = do args_after_glut <- getArgs >>= initialize program_name
           initialDisplayMode $= [DoubleBuffered, WithDepthBuffer]
           initialWindowSize $= window_size
           window <- createWindow window_title
-          depthFunc $= Just Less
           state_ref <- newIORef initial_state
           displayCallback $= display state_ref
           keyboardMouseCallback $= Just (keyboard_mouse_callback state_ref)

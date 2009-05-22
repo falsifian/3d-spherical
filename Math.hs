@@ -57,3 +57,9 @@ cross4 (V4 x0 x1 x2 x3) (V4 y0 y1 y2 y3) (V4 z0 z1 z2 z3) =
 
 make_ortho :: Vec4 -> Vec4 -> Vec4
 make_ortho a b = b @- a .* (a @. b)
+
+sph_add :: Vec4 -> Vec4 -> Vec4
+sph_add p v = if norm v < 1e-9 then p else normalize (p @+ v .* (sin (norm v) / norm v))
+
+sph_dist :: Vec4 -> Vec4 -> Double
+sph_dist x y = acos (1 - normSqr (x @- y) / 2)

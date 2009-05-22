@@ -6,7 +6,6 @@ import Constants
 import Data.IORef
 import Engine
 import Graphics.Rendering.OpenGL.GL
-import Graphics.Rendering.OpenGL.GL.VertexSpec -- XXX needed?
 import Graphics.UI.GLUT
 import Math
 
@@ -43,7 +42,7 @@ display_universe state =
        set_projection_matrix (player_pos state) (player_fwd state) (player_up (state_calc state)) (player_right (state_calc state))
        preservingMatrix $ do scale4 1 1 1 (-1::Double)
 			     color (Color3 1 1 1 :: Color3 Double)
-			     sphere (bottom_sphere_radius * 0.8 {- XXX -})
+			     sphere (bottom_sphere_radius)
        -- x pole
        preservingMatrix $ do swap_wx
 			     color (Color3 1 0 0 :: Color3 Double)
@@ -63,13 +62,9 @@ display_osd state =
        matrixMode $= Projection
        loadIdentity
        matrixMode $= Modelview 0
-       if mostly_ab state
+       if on_the_ground state
            then do color (Color3 1 1 0 :: Color3 Double)
                    renderPrimitive Quads (sequence_ (map vertex mostly_q))
-           else return ()
-       if really_ab state
-           then do color (Color3 1 0 1 :: Color3 Double)
-                   renderPrimitive Quads (sequence_ (map vertex really_q))
            else return ()
     where
         mostly_q, really_q :: [Vertex3 GLdouble]

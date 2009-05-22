@@ -6,6 +6,7 @@ import Constants
 import Data.IORef
 import Engine
 import Graphics.Rendering.OpenGL.GL
+import Graphics.Rendering.OpenGL.GL.VertexSpec -- XXX needed?
 import Graphics.UI.GLUT
 import Math
 
@@ -29,23 +30,57 @@ set_projection_matrix pos fwd up right =
         coords (V4 x y z w) = [x, y, z, w]
 
 display :: IORef State -> IO ()
-display state_ref = do state <- readIORef state_ref
-                       clear [ColorBuffer, DepthBuffer]
-                       set_projection_matrix (player_pos state) (player_fwd state) (player_up (state_calc state)) (player_right (state_calc state))
-                       preservingMatrix $ do scale4 1 1 1 (-1::Double)
-                                             color (Color3 1 1 1 :: Color3 Double)
-                                             sphere (bottom_sphere_radius * 0.8 {- XXX -})
-                       preservingMatrix $ do swap_wz
-                                             color (Color3 1 0 0 :: Color3 Double)
-                                             sphere 0.3
-                       preservingMatrix $ do rotate (45::Double) (Vector3 1 0 0)
-                                             swap_wz
-                                             color (Color3 0 0 1 :: Color3 Double)
-                                             sphere 0.15
-                       preservingMatrix $ do swap_wz
-                                             color (Color3 0 1 0 :: Color3 Double)
-                                             sphere 0.15
-                       swapBuffers
+display state_ref =
+    do state <- readIORef state_ref
+       display_universe state
+       display_osd state
+       swapBuffers
+
+display_universe :: State -> IO ()
+display_universe state =
+    do clear [ColorBuffer, DepthBuffer]
+       depthFunc $= Just Less
+       set_projection_matrix (player_pos state) (player_fwd state) (player_up (state_calc state)) (player_right (state_calc state))
+       preservingMatrix $ do scale4 1 1 1 (-1::Double)
+			     color (Color3 1 1 1 :: Color3 Double)
+			     sphere (bottom_sphere_radius * 0.8 {- XXX -})
+       -- x pole
+       preservingMatrix $ do swap_wx
+			     color (Color3 1 0 0 :: Color3 Double)
+			     sphere 0.1
+       -- y pole
+       preservingMatrix $ do swap_wy
+			     color (Color3 0 1 0 :: Color3 Double)
+			     sphere 0.1
+       -- z pole
+       preservingMatrix $ do swap_wz
+			     color (Color3 0 0 1 :: Color3 Double)
+			     sphere 0.1
+
+display_osd :: State -> IO ()
+display_osd state =
+    do depthFunc $= Nothing
+       matrixMode $= Projection
+       loadIdentity
+       matrixMode $= Modelview 0
+       if mostly_ab state
+           then do color (Color3 1 1 0 :: Color3 Double)
+                   renderPrimitive Quads (sequence_ (map vertex mostly_q))
+           else return ()
+       if really_ab state
+           then do color (Color3 1 0 1 :: Color3 Double)
+                   renderPrimitive Quads (sequence_ (map vertex really_q))
+           else return ()
+    where
+        mostly_q, really_q :: [Vertex3 GLdouble]
+        mostly_q = [Vertex3 0.1 0.1 0, Vertex3 0.1 0.2 0, Vertex3 0.2 0.2 0, Vertex3 0.2 0.1 0]
+        really_q = [Vertex3 0.3 0.1 0, Vertex3 0.3 0.2 0, Vertex3 0.4 0.2 0, Vertex3 0.4 0.1 0]
+
+swap_wx :: IO ()
+swap_wx = (newMatrix ColumnMajor [0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0] :: IO (GLmatrix Double)) >>= multMatrix
+
+swap_wy :: IO ()
+swap_wy = (newMatrix ColumnMajor [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0] :: IO (GLmatrix Double)) >>= multMatrix
 
 swap_wz :: IO ()
 swap_wz = (newMatrix ColumnMajor [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0] :: IO (GLmatrix Double)) >>= multMatrix

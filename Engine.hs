@@ -14,6 +14,7 @@ data Key = KFwd | KBwd | KRight | KLeft | KJump deriving (Eq, Ord)
 
 data State = State { player_pos, player_fwd, player_v :: Vec4
                    , keys :: Set.Set Key
+                   , mostly_ab, really_ab :: Bool
                    , state_calc :: StateCalc
                    }
 
@@ -21,7 +22,7 @@ data StateCalc = SC { player_up, player_right :: Vec4
                     }
 
 initial_state :: State
-initial_state = complete_state $ State (Math.normalize (V4 (tan (2 * bottom_sphere_radius + player_height)) 0 0 (-1))) (V4 0 0 1 0) zvec (Set.empty) undefined
+initial_state = complete_state $ State (Math.normalize (V4 (tan (2 * bottom_sphere_radius + player_height)) 0 0 (-1))) (V4 0 0 1 0) zvec (Set.empty) False False undefined
 
 complete_state :: State -> State
 complete_state state@(State { player_pos = pos, player_fwd = fwd }) =
@@ -46,7 +47,7 @@ update state@(State { player_pos = pos, player_fwd = fwd, player_v = v, state_ca
             _ -> v_after_gravity
         new_v = make_ortho new_pos v_for_updating_pos
     in
-    complete_state (state { player_pos = new_pos, player_fwd = new_fwd, player_v = new_v })
+    complete_state (state { player_pos = new_pos, player_fwd = new_fwd, player_v = new_v, mostly_ab = mostly_above_ground pos, really_ab = really_above_ground pos })
 
 mostly_above_ground, really_above_ground :: Vec4 -> Bool
 mostly_above_ground (V4 _ _ _ w) = - w < cos bottom_sphere_radius + normal_force_eps

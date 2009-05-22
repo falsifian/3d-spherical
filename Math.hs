@@ -54,3 +54,6 @@ cross4 (V4 x0 x1 x2 x3) (V4 y0 y1 y2 y3) (V4 z0 z1 z2 z3) =
           + x1 * y2 * z0
           + x2 * y0 * z1
           - x2 * y1 * z0
+
+make_ortho :: Vec4 -> Vec4 -> Vec4
+make_ortho a b = b @- a .* (a @. b)

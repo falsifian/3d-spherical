@@ -65,7 +65,7 @@ update state@(State { player_pos = pos, player_fwd = fwd, state_calc = SC { play
                 if sph_within_tri a b c (normalize $ lose_w pos_after_vert) && height_after_vert > height + player_height - step_tolerance - normal_force_eps && height_after_vert < height + player_height + normal_force_eps 
                     then Just (height + player_height)
                     else Nothing
-            | FTri height _ a b c <- world_arch
+            | FTri { height = height, a = a, b = b, c = c } <- world_arch
             ]
         floor_height = guard (player_vert_v state <= 0) >>
             -- Actually, this is the floor height plus the player's height.

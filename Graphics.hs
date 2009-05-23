@@ -41,6 +41,8 @@ display_universe state =
     do clear [ColorBuffer, DepthBuffer]
        depthFunc $= Just Less
        set_projection_matrix (player_pos state) (player_fwd state) (player_up (state_calc state)) (player_right (state_calc state))
+
+       -- bottom sphere (-w pole)
        preservingMatrix $ do scale4 1 1 1 (-1::Double)
 			     color (Color3 1 1 1 :: Color3 Double)
 			     sphere (bottom_sphere_radius)

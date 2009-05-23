@@ -6,16 +6,19 @@ module Engine
 , update
 ) where
 
+import Architecture
 import Constants
+import qualified Data.Set as Set
 import List
 import Math
-import qualified Data.Set as Set
+import Maybe
+import Monad
 
 data Key = KFwd | KBwd | KRight | KLeft | KJump deriving (Eq, Ord)
 
 data State = State { player_pos, player_fwd :: Vec4
                    , player_vert_v :: Double
-                   , on_the_ground :: Bool
+                   , on_a_floor :: Bool
                    , keys :: Set.Set Key
                    , state_calc :: StateCalc
                    }
@@ -52,21 +55,36 @@ update state@(State { player_pos = pos, player_fwd = fwd, state_calc = SC { play
             (False, True) -> sph_add pos (fwd .* (- advance_rate * step_size))
             _ -> pos
         pos_after_vert = sph_add pos_after_walk (up .* (player_vert_v state * step_size))
-        on_the_ground = sph_dist pos_after_vert (V4 0 0 0 (- 1)) < bottom_sphere_radius + player_height + normal_force_eps
+        height_after_vert = sph_dist pos_after_vert (V4 0 0 0 (- 1))
+        on_ground =
+            if height_after_vert < bottom_sphere_radius + player_height + normal_force_eps 
+                then Just (bottom_sphere_radius + player_height)
+                else Nothing
+        on_triangles =
+            [
+                if sph_within_tri a b c (normalize $ lose_w pos_after_vert) && height_after_vert > height + player_height - step_tolerance - normal_force_eps && height_after_vert < height + player_height + normal_force_eps 
+                    then Just (height + player_height)
+                    else Nothing
+            | FTri height _ a b c <- world_arch
+            ]
+        floor_height = guard (player_vert_v state <= 0) >>
+            -- Actually, this is the floor height plus the player's height.
+            let l = catMaybes (on_ground : on_triangles) in
+            if null l then Nothing else Just (maximum l)
         new_pos =
-            if on_the_ground
-                then let V4 x y z w = pos_after_vert
-                     in
-                     sph_add (V4 0 0 0 (- 1)) (normalize (V4 x y z 0) .* (bottom_sphere_radius + player_height))
-                else pos_after_vert
+            case floor_height of
+                Just h -> let V4 x y z w = pos_after_vert
+                          in
+                          sph_add (V4 0 0 0 (- 1)) (normalize (V4 x y z 0) .* h)
+                Nothing -> pos_after_vert
         fwd_after_turn = case (Set.member KLeft (keys state), Set.member KRight (keys state)) of
             (True, False) -> fwd .* cos (turn_rate * step_size) @- right .* sin (turn_rate * step_size)
             (False, True) -> fwd .* cos (turn_rate * step_size) @+ right .* sin (turn_rate * step_size)
             _ -> fwd
         new_fwd = normalize $ cross4 new_pos (V4 0 0 0 1) (cross4 new_pos fwd_after_turn (V4 0 0 0 1))
         new_vert_v =
-            if on_the_ground
+            if isJust floor_height
                 then if Set.member KJump (keys state) then jump_v else 0
                 else player_vert_v state - gravity * step_size
-        ret = complete_state (state { player_pos = new_pos, player_fwd = new_fwd, player_vert_v = new_vert_v, on_the_ground = on_the_ground })
+        ret = complete_state (state { player_pos = new_pos, player_fwd = new_fwd, player_vert_v = new_vert_v, on_a_floor = isJust floor_height })
     in seq (verify_state ret) ret -- TODO: get rid of expensive state verification

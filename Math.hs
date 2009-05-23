@@ -57,6 +57,10 @@ instance NormVector Vec4 where
 zero_w :: Vec3 -> Vec4
 zero_w (V3 x y z) = V4 x y z 0
 
+cross :: Vec3 -> Vec3 -> Vec3
+cross (V3 x0 x1 x2) (V3 y0 y1 y2) =
+    V3 (x1 * y2 - x2 * y1) (- x0 * y2 + x2 * y0) (x0 * y1 - x1 * y0)
+
 cross4 :: Vec4 -> Vec4 -> Vec4 -> Vec4
 cross4 (V4 x0 x1 x2 x3) (V4 y0 y1 y2 y3) (V4 z0 z1 z2 z3) =
     V4
@@ -84,3 +88,10 @@ sph_dist x y = acos (1 - normSqr (x @- y) / 2)
 
 vec4_to_vertex4 :: Vec4 -> GL.Vertex4 Double
 vec4_to_vertex4 (V4 x y z w) = GL.Vertex4 x y z w
+
+lose_w :: Vec4 -> Vec3
+lose_w (V4 x y z _) = V3 x y z
+
+sph_within_tri :: Vec3 -> Vec3 -> Vec3 -> Vec3 -> Bool
+-- The triangle must be given counter-clockwise.
+sph_within_tri a b c x = cross a (b @- a) @. (x @- a) > 0 && cross b (c @- b) @. (x @- b) > 0 && cross c (a @- c) @. (x @- c) > 0

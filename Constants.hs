@@ -13,12 +13,13 @@ window_title = "GLUT Window"
 
 -- Physics
 
-advance_rate, gravity, jump_v, normal_force_eps, step_size, turn_rate :: Double
-advance_rate = 1
+advance_rate, gravity, jump_v, normal_force_eps, step_size, step_tolerance, turn_rate :: Double
+advance_rate = 0.4
 gravity = 1
 jump_v = 0.2
 normal_force_eps = 1e-6
 step_size = 1e-2
+step_tolerance = player_height / 2
 turn_rate = 5
 
 -- The World

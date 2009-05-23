@@ -5,15 +5,16 @@ import List
 import Math
 
 data Floating_Triangle = FTri { height :: Double
+                              , color :: GL.Color3 Double
                               , a, b, c :: Vec3 -- counter-clockwise
                               }
 
 world_arch :: [Floating_Triangle]
-world_arch = [FTri 0.11 (V3 1 0 0) (V3 0 1 0) (V3 0 0 1)]
+world_arch = [FTri 0.115 (GL.Color3 1 0 1) (V3 1 0 0) (V3 0 1 0) (V3 0 0 1), FTri 0.117 (GL.Color3 0 1 1) (V3 0 1 0) (V3 1 0 0) (normalize (V3 0.5 0.5 (-0.5)))]
 
 draw_ft :: Floating_Triangle -> IO ()
-draw_ft (FTri height a b c) =
-    do GL.color (GL.Color3 1 0 (1 :: Double))
+draw_ft (FTri height color a b c) =
+    do GL.color color
        GL.renderPrimitive GL.TriangleStrip $ sequence_ $
            concat [GL.primitiveRestart : map GL.vertex (one_row i) | i <- [0 .. pred side_segments]]
     where

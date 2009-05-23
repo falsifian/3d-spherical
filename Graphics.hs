@@ -2,7 +2,7 @@ module Graphics
 ( display
 ) where
 
-import Architecture
+import Architecture hiding (color)
 import Constants
 import Data.IORef
 import Engine
@@ -65,7 +65,7 @@ display_osd state =
        matrixMode $= Projection
        loadIdentity
        matrixMode $= Modelview 0
-       if on_the_ground state
+       if on_a_floor state
            then do color (Color3 1 1 0 :: Color3 Double)
                    renderPrimitive Quads (sequence_ (map vertex mostly_q))
            else return ()

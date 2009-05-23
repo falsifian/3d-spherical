@@ -21,11 +21,11 @@ stairs = concat
             p2 = normalize (V3 (cos (t1 * r)) (sin (t1 * r)) (zw / 2))
             p3 = normalize (V3 (cos (t0 * r)) (sin (t0 * r)) (zw / 2))
         in
-        [FTri (t0 * pi) (GL.Color3 0.7 0.5 0.2) 10 p0 p1 p2, FTri (t0 * pi) (GL.Color3 0.7 0.5 0.2) 10 p0 p2 p3]
-    | t0 <- [0.1 / pi, 0.11 / pi .. 0.2 / pi], t1 <- [t0 + 0.01 / pi]
+        [FTri (t0 * pi) (GL.Color3 (sin (t0 * r * 10.8)) 0.5 0.2) 10 p0 p1 p2, FTri (t0 * pi) (GL.Color3 (sin (t0 * r * 10.8)) 0.5 0.2) 10 p0 p2 p3]
+    | t0 <- [0.1 / pi, 0.11 / pi .. 0.8 / pi], t1 <- [t0 + 0.05 / pi]
     ]
     where r = 100
-          zw = 0.2
+          zw = 0.5
 
 draw_ft :: Floating_Triangle -> IO ()
 draw_ft (FTri height color side_segments a b c) =

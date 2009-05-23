@@ -81,7 +81,7 @@ make_ortho :: (IPVector v) => v -> v -> v
 make_ortho a b = b @- a .* (a @. b)
 
 sph_add :: Vec4 -> Vec4 -> Vec4
-sph_add p v = if norm v < 1e-9 then p else normalize (p @+ v .* (sin (norm v) / norm v))
+sph_add p v = if norm v < 1e-9 then p else p .* cos (norm v) @+ v .* (sin (norm v) / norm v)
 
 sph_dist :: Vec4 -> Vec4 -> Double
 sph_dist x y = acos (1 - normSqr (x @- y) / 2)

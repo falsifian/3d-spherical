@@ -12,20 +12,13 @@ data Floating_Triangle = FTri { height :: Double
                               }
 
 world_arch :: [Floating_Triangle]
-world_arch = [FTri 0.115 (GL.Color3 1 0 1) 20 (V3 1 0 0) (V3 0 1 0) (V3 0 0 1), FTri 0.117 (GL.Color3 0 1 1) 20 (V3 0 1 0) (V3 1 0 0) (normalize (V3 0.5 0.5 (-0.5)))] ++ stairs
+world_arch = concat [afloor i | i <- [1 .. 7]]
 
-stairs :: [Floating_Triangle]
-stairs = concat
-    [   let p0 = normalize (V3 (cos (t0 * r)) (sin (t0 * r)) (-zw / 2))
-            p1 = normalize (V3 (cos (t1 * r)) (sin (t1 * r)) (-zw / 2))
-            p2 = normalize (V3 (cos (t1 * r)) (sin (t1 * r)) (zw / 2))
-            p3 = normalize (V3 (cos (t0 * r)) (sin (t0 * r)) (zw / 2))
-        in
-        [FTri (t0 * pi) (GL.Color3 (sin (t0 * r * 10.8)) 0.5 0.2) 10 p0 p1 p2, FTri (t0 * pi) (GL.Color3 (sin (t0 * r * 10.8)) 0.5 0.2) 10 p0 p2 p3]
-    | t0 <- [0.1 / pi, 0.11 / pi .. 0.8 / pi], t1 <- [t0 + 0.05 / pi]
-    ]
-    where r = 100
-          zw = 0.5
+afloor :: Int -> [Floating_Triangle]
+afloor i = [FTri h c 20 (V3 1 0 0) (V3 0 1 0) (V3 0 0 1), FTri (h - pi / 16) (GL.Color3 1 0.5 0.5) 10 (normalize (V3 1 0.9 0.9)) (normalize (V3 0.9 0.1 0.9)) (normalize (V3 0.9 0.9 0.1))]
+    where
+        h = fromIntegral i * pi / 8
+        c = GL.Color3 (fromIntegral i / 8) (fromIntegral (mod i 2)) 0.5
 
 draw_ft :: Floating_Triangle -> IO ()
 draw_ft (FTri height color side_segments a b c) =

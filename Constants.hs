@@ -13,19 +13,18 @@ window_title = "GLUT Window"
 
 -- Physics
 
-advance_rate, gravity, jump_v, normal_force_eps, step_size, step_tolerance, turn_rate :: Double
-advance_rate = 0.4
+normal_force_eps, step_size :: Double
 gravity = 1
-jump_v = 0.2
 normal_force_eps = 1e-6
 step_size = 1e-2
-step_tolerance = player_height / 2
-turn_rate = 5
 
 -- The World
 
-bottom_sphere_radius :: Double
-bottom_sphere_radius = 0.1
 
-player_height :: Double
-player_height = 0.01
+advance_rate, bottom_sphere_radius, gravity, jump_v, player_height, step_tolerance, turn_rate :: Double
+advance_rate = 0.4
+bottom_sphere_radius = pi / 8
+jump_v = 0.6
+player_height = pi / 16
+step_tolerance = player_height / 2
+turn_rate = 5

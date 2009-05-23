@@ -27,4 +27,4 @@ bottom_sphere_radius :: Double
 bottom_sphere_radius = 0.1
 
 player_height :: Double
-player_height = 0.05
+player_height = 0.01

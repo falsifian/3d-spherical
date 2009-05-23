@@ -2,6 +2,7 @@ module Graphics
 ( display
 ) where
 
+import Architecture
 import Constants
 import Data.IORef
 import Engine
@@ -14,7 +15,7 @@ set_projection_matrix pos fwd up right =
     -- The camera is sitting at the z pole looking toward the w pole.
     do matrixMode $= Projection
        loadIdentity
-       scale (0.5 :: GLfloat) 0.5 (-1e-5)
+       scale (2 :: GLfloat) 2 (-1e-5)
 
        -- At this point, the camera is sitting at the z pole looking toward the
        -- w pole.  Above the camera is the y pole, and to the right is the x
@@ -55,6 +56,8 @@ display_universe state =
        preservingMatrix $ do swap_wz
 			     color (Color3 0 0 1 :: Color3 Double)
 			     sphere 0.1
+
+       sequence_ $ map draw_ft world_arch
 
 display_osd :: State -> IO ()
 display_osd state =

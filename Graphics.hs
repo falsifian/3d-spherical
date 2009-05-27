@@ -15,7 +15,7 @@ set_projection_matrix pos fwd up right =
     -- The camera is sitting at the z pole looking toward the w pole.
     do matrixMode $= Projection
        loadIdentity
-       scale (2 :: GLfloat) 2 (-1e-5)
+       scale (1 :: GLfloat) 1 (-1e-5)
 
        -- At this point, the camera is sitting at the z pole looking toward the
        -- w pole.  Above the camera is the y pole, and to the right is the x
@@ -32,32 +32,43 @@ set_projection_matrix pos fwd up right =
 display :: IORef State -> IO ()
 display state_ref =
     do state <- readIORef state_ref
-       display_universe state
+       display_universe_twice state
        display_osd state
        swapBuffers
 
-display_universe :: State -> IO ()
-display_universe state =
-    do clear [ColorBuffer, DepthBuffer]
-       depthFunc $= Just Less
+display_universe_twice :: State -> IO ()
+display_universe_twice state =
+    do depthFunc $= Just Less
+       clear [ColorBuffer, DepthBuffer]
        set_projection_matrix (player_pos state) (player_fwd state) (player_up (state_calc state)) (player_right (state_calc state))
+       matrixMode $= Projection
+       scale4 (-1) (-1) (-1) (-1::Double)
+       matrixMode $= Modelview 0
+       display_universe_once state
+       matrixMode $= Projection
+       scale4 (-1) (-1) (-1) (-1::Double)
+       matrixMode $= Modelview 0
+       clear [DepthBuffer]
+       display_universe_once state
 
-       -- bottom sphere (-w pole)
+display_universe_once :: State -> IO ()
+display_universe_once state =
+    do -- bottom sphere (-w pole)
        preservingMatrix $ do scale4 1 1 1 (-1::Double)
 			     color (Color3 1 1 1 :: Color3 Double)
 			     sphere (bottom_sphere_radius)
        -- x pole
        preservingMatrix $ do swap_wx
 			     color (Color3 1 0 0 :: Color3 Double)
-			     sphere 0.1
+			     sphere 0.3
        -- y pole
        preservingMatrix $ do swap_wy
 			     color (Color3 0 1 0 :: Color3 Double)
-			     sphere 0.1
+			     sphere 0.3
        -- z pole
        preservingMatrix $ do swap_wz
 			     color (Color3 0 0 1 :: Color3 Double)
-			     sphere 0.1
+			     sphere 0.3
 
        sequence_ $ map draw_ft world_arch
 

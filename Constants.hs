@@ -22,9 +22,9 @@ step_size = 1e-2
 
 
 advance_rate, bottom_sphere_radius, gravity, jump_v, player_height, step_tolerance, turn_rate :: Double
-advance_rate = 0.4
+advance_rate = 0.8
 bottom_sphere_radius = pi / 8
 jump_v = 0.6
-player_height = pi / 16
+player_height = pi / 64
 step_tolerance = player_height / 2
 turn_rate = 5

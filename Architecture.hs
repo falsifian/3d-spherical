@@ -15,7 +15,7 @@ world_arch :: [Floating_Triangle]
 world_arch = concat [afloor i | i <- [1 .. 7]]
 
 afloor :: Int -> [Floating_Triangle]
-afloor i = [FTri h c 20 (V3 1 0 0) (V3 0 1 0) (V3 0 0 1), FTri (h - pi / 16) (GL.Color3 1 0.5 0.5) 10 (normalize (V3 1 0.9 0.9)) (normalize (V3 0.9 0.1 0.9)) (normalize (V3 0.9 0.9 0.1))]
+afloor i = [FTri h c 20 (V3 1 0 0) (V3 0 1 0) (V3 0 0 1), FTri (h - pi / 16) (GL.Color3 1 0.5 0.5) 10 (normalize (V3 0.5 1 1)) (normalize (V3 1 0.5 1)) (normalize (V3 1 1 0.5))]
     where
         h = fromIntegral i * pi / 8
         c = GL.Color3 (fromIntegral i / 8) (fromIntegral (mod i 2)) 0.5

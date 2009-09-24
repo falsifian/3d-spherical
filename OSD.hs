@@ -41,7 +41,8 @@ defaultOSD =
         , osdPanelColour = osdBackgroundColour defaultOSD
         , osdPanels =
             -- TODO: use aspect ratio
-            [ (OR (-7/8) (-5/8) (-1/2) (1/2), jumpPanel)
+            [ (OR (-7/8) (-5/8) (-1/2) (1/2), boolPanel on_a_floor)
+            , (OR (-3/8) (-1/8) (-1/2) (1/2), boolPanel hover)
             , (OR (1/32) (7/32) (-3/8) (3/8), coordMeterPanel (V4 1 0 0 0 @.))
             , (OR (9/32) (15/32) (-3/8) (3/8), coordMeterPanel (V4 0 1 0 0 @.))
             , (OR (17/32) (23/32) (-3/8) (3/8), coordMeterPanel (V4 0 0 1 0 @.))
@@ -49,9 +50,9 @@ defaultOSD =
             ]
         }
 
-jumpPanel :: Double -> State -> IO ()
-jumpPanel heightOverWidth state =
-    if on_a_floor state
+boolPanel :: (State -> Bool) -> Double -> State -> IO ()
+boolPanel param heightOverWidth state =
+    if param state
         then do color (Color3 1 0 0 :: Color3 Double)
                 renderPrimitive Quads
                   $ sequence_ 

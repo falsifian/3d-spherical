@@ -14,11 +14,11 @@ import Math
 import Maybe
 import Monad
 
-data Key = KFwd | KBwd | KRight | KLeft | KJump deriving (Eq, Ord)
+data Key = KFwd | KBwd | KRight | KLeft | KJump | KHover | KUp | KDown deriving (Eq, Ord)
 
 data State = State { player_pos, player_fwd :: Vec4
                    , player_vert_v :: Double
-                   , on_a_floor :: Bool
+                   , on_a_floor, hover, hover_released :: Bool
                    , keys :: Set.Set Key
                    , state_calc :: StateCalc
                    }
@@ -27,7 +27,7 @@ data StateCalc = SC { player_up, player_right :: Vec4
                     }
 
 initial_state :: State
-initial_state = complete_state $ State (Math.normalize (V4 (tan (2 * bottom_sphere_radius + player_height)) 0 0 (-1))) (V4 0 0 1 0) 0 False (Set.empty) undefined
+initial_state = complete_state $ State (Math.normalize (V4 (tan (2 * bottom_sphere_radius + player_height)) 0 0 (-1))) (V4 0 0 1 0) 0 False False False (Set.empty) undefined
 
 orthonormal :: (IPVector v) => [v] -> Bool
 orthonormal vs = and [abs (normSqr x - 1) < 1e-9 | x <- vs] && and [case xs of [] -> True; h : t -> and [abs (h @. y) < 1e-9 | y <- t] | xs <- tails vs]
@@ -54,7 +54,13 @@ update state@(State { player_pos = pos, player_fwd = fwd, state_calc = SC { play
             (True, False) -> sph_add pos (fwd .* (advance_rate * step_size))
             (False, True) -> sph_add pos (fwd .* (- advance_rate * step_size))
             _ -> pos
-        pos_after_vert = sph_add pos_after_walk (up .* (player_vert_v state * step_size))
+        pos_after_vert =
+            if hover state
+                then case (Set.member KDown (keys state), Set.member KUp (keys state)) of
+                    (True, False) -> sph_add pos_after_walk (up .* (- up_down_rate * step_size))
+                    (False, True) -> sph_add pos_after_walk (up .* (up_down_rate * step_size))
+                    _ -> pos_after_walk
+                else sph_add pos_after_walk (up .* (player_vert_v state * step_size))
         height_after_vert = sph_dist pos_after_vert (V4 0 0 0 (- 1))
         on_ground =
             if height_after_vert < bottom_sphere_radius + player_height + normal_force_eps 
@@ -67,7 +73,7 @@ update state@(State { player_pos = pos, player_fwd = fwd, state_calc = SC { play
                     else Nothing
             | FTri { height = height, a = a, b = b, c = c } <- world_arch
             ]
-        floor_height = guard (player_vert_v state <= 0) >>
+        floor_height = guard (not (hover state) && player_vert_v state <= 0) >>
             -- Actually, this is the floor height plus the player's height.
             let l = catMaybes (on_ground : on_triangles) in
             if null l then Nothing else Just (maximum l)
@@ -86,5 +92,7 @@ update state@(State { player_pos = pos, player_fwd = fwd, state_calc = SC { play
             if isJust floor_height
                 then if Set.member KJump (keys state) then jump_v else 0
                 else player_vert_v state - gravity * step_size
-        ret = complete_state (state { player_pos = new_pos, player_fwd = new_fwd, player_vert_v = new_vert_v, on_a_floor = isJust floor_height })
+        new_hover = hover state /= (Set.member KHover (keys state) && hover_released state)
+        new_hover_released = not (Set.member KHover (keys state))
+        ret = complete_state (state { player_pos = new_pos, player_fwd = new_fwd, player_vert_v = new_vert_v, on_a_floor = isJust floor_height, hover = new_hover, hover_released = new_hover_released })
     in seq (verify_state ret) ret -- TODO: get rid of expensive state verification

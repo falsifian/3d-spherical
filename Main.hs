@@ -34,6 +34,10 @@ kmap '4' = Just KLeft
 kmap '5' = Just KBwd
 kmap '6' = Just KRight
 kmap '8' = Just KFwd
+kmap '0' = Just KJump
+kmap '7' = Just KDown
+kmap '9' = Just KUp
+kmap '+' = Just KHover
 kmap _ = Nothing
 
 fix :: (a -> a) -> a

@@ -21,8 +21,9 @@ step_size = 1e-2
 -- The World
 
 
-advance_rate, bottom_sphere_radius, gravity, jump_v, player_height, step_tolerance, turn_rate :: Double
+advance_rate, up_down_rate, bottom_sphere_radius, gravity, jump_v, player_height, step_tolerance, turn_rate :: Double
 advance_rate = 0.8
+up_down_rate = 0.8
 bottom_sphere_radius = pi / 8
 jump_v = 0.6
 player_height = pi / 64

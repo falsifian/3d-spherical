@@ -7,6 +7,7 @@ module OSD
 import Engine
 import Graphics.Rendering.OpenGL.GL
 import Graphics.UI.GLUT
+import Math
 
 data OSD =
     OSD { osdRect :: OrthoRect
@@ -41,12 +42,14 @@ defaultOSD =
         , osdPanels =
             -- TODO: use aspect ratio
             [ (OR (-7/8) (-5/8) (-1/2) (1/2), jumpPanel)
-            , (OR (-3/8) (3/8) (-1/2) (1/2), posPanel)
+            , (OR (1/32) (7/32) (-3/8) (3/8), coordMeterPanel (V4 1 0 0 0 @.))
+            , (OR (9/32) (15/32) (-3/8) (3/8), coordMeterPanel (V4 0 1 0 0 @.))
+            , (OR (17/32) (23/32) (-3/8) (3/8), coordMeterPanel (V4 0 0 1 0 @.))
+            , (OR (25/32) (31/32) (-3/8) (3/8), coordMeterPanel (V4 0 0 0 1 @.))
             ]
         }
 
-jumpPanel, posPanel :: Double -> State -> IO ()
-
+jumpPanel :: Double -> State -> IO ()
 jumpPanel heightOverWidth state =
     if on_a_floor state
         then do color (Color3 1 0 0 :: Color3 Double)
@@ -58,12 +61,31 @@ jumpPanel heightOverWidth state =
                   ]
         else return ()
 
-posPanel heightOverWidth state = preservingMatrix $
-    do -- TODO: use aspect ratio
-       color (Color3 1 0 0 :: Color3 Double)
-       translate (Vector3 (-1) 0 0 :: Vector3 Double)
-       scale (1/1500) (1/125) (1::Double)
-       renderString Roman (show (player_pos state))
+coordMeterPanel :: (Vec4 -> Double) -> Double -> State -> IO ()
+coordMeterPanel coord heightOverWidth state =
+    let minAngle = -pi/4
+        maxAngle = 5*pi/4
+        nTics = 9
+        ticInnerRad = 3/4
+        ticOuterRad = 15/16
+        arrowBaseLength = ticOuterRad - ticInnerRad
+        arrowLength = (ticInnerRad + ticOuterRad) / 2
+    in
+    do color (Color3 1 1 1 :: Color3 Double)
+       renderPrimitive Lines $ sequence_ $ concat
+           [ let angle = (minAngle * fromIntegral (nTics - i - 1) + maxAngle * fromIntegral i) / fromIntegral (nTics - 1) in
+             [ vertex (Vertex2 (ticInnerRad * cos angle) (ticInnerRad * sin angle) :: Vertex2 Double)
+             , vertex (Vertex2 (ticOuterRad * cos angle) (ticOuterRad * sin angle) :: Vertex2 Double)
+             ]
+           | i <- [0..pred nTics]
+           ]
+       unsafePreservingMatrix $
+           do rotate ((minAngle + (coord (player_pos state) + 1) * (maxAngle - minAngle) / 2) * 180 / pi) (Vector3 0 0 1)
+              color (Color3 1 0 0 :: Color3 Double)
+              renderPrimitive Triangles $ 
+                  do vertex (Vertex2 0 (-arrowBaseLength / 2) :: Vertex2 Double)
+                     vertex (Vertex2 0 (arrowBaseLength / 2) :: Vertex2 Double)
+                     vertex (Vertex2 arrowLength 0 :: Vertex2 Double)
 
 fill :: IO ()
 fill = renderPrimitive Quads $ sequence_ $ map vertex $

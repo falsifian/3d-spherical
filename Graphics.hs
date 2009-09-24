@@ -10,14 +10,7 @@ import Engine
 import Graphics.Rendering.OpenGL.GL
 import Graphics.UI.GLUT
 import Math
-
-data OrthoRect = OR { orMinX, orMaxX, orMinY, orMaxY :: Double }
-
-data OSD =
-    OSD { osdRect :: OrthoRect
-        , osdBackgroundColour, osdPanelColour :: Color4 Double
-        , osdPanels :: [(OrthoRect, Double -> State -> IO ())]
-        }
+import OSD
 
 set_matrix :: Vec4 -> Vec4 -> Vec4 -> Vec4 -> IO ()
 set_matrix pos fwd up right =
@@ -45,7 +38,7 @@ display :: IORef State -> IO ()
 display state_ref =
     do state <- readIORef state_ref
        display_universe_twice state
-       display_osd defaultOSD state
+       displayOSD defaultOSD state
        swapBuffers
 
 display_universe_twice :: State -> IO ()
@@ -87,23 +80,6 @@ display_universe_once state =
 
        sequence_ $ map draw_ft world_arch
 
-display_osd :: OSD -> State -> IO ()
-display_osd osd state =
-    let displayPanel (rect, panel) = preservingMatrix $
-            do enterRect rect
-               color (osdPanelColour osd)
-               fill
-               panel (aspect (osdRect osd) * aspect rect) state
-    in preservingMatrix $
-    do depthFunc $= Nothing
-       matrixMode $= Projection
-       loadIdentity
-       matrixMode $= Modelview 0
-       enterRect (osdRect osd)
-       color (osdBackgroundColour osd)
-       fill
-       sequence_ (map displayPanel (osdPanels osd))
-
 swap_wx :: IO ()
 swap_wx = (newMatrix ColumnMajor [0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0] :: IO (GLmatrix Double)) >>= multMatrix
 
@@ -125,47 +101,3 @@ sphere radius = -- radius is the radius in radians
                 -- about the w pole, so we just let GLU do this for us.
                 let euclid_radius = tan radius in
                 renderQuadric (QuadricStyle Nothing NoTextureCoordinates Outside FillStyle) (Sphere euclid_radius 100 100)
-
-defaultOSD :: OSD
-defaultOSD =
-    OSD { osdRect = OR (-1) 1 (-1) (-1/2)
-        , osdBackgroundColour = Color4 0 0 0 0.5
-        , osdPanelColour = osdBackgroundColour defaultOSD
-        , osdPanels =
-            -- TODO: use aspect ratio
-            [ (OR (-7/8) (-5/8) (-1/2) (1/2), jumpPanel)
-            , (OR (-3/8) (3/8) (-1/2) (1/2), posPanel)
-            ]
-        }
-
-jumpPanel, posPanel :: Double -> State -> IO ()
-
-jumpPanel heightOverWidth state =
-    if on_a_floor state
-        then do color (Color3 1 0 0 :: Color3 Double)
-                renderPrimitive Quads
-                  $ sequence_ 
-                  $ map vertex
-                  [ Vertex2 (-1/2) (-1/2), Vertex2 (-1/2) (1/2)
-                  , Vertex2 (1/2) (1/2), Vertex2 (1/2) (-1/2) :: Vertex2 Double
-                  ]
-        else return ()
-
-posPanel heightOverWidth state = preservingMatrix $
-    do -- TODO: use aspect ratio
-       color (Color3 1 0 0 :: Color3 Double)
-       translate (Vector3 (-1) 0 0 :: Vector3 Double)
-       scale (1/1500) (1/125) (1::Double)
-       renderString Roman (show (player_pos state))
-
-fill :: IO ()
-fill = renderPrimitive Quads $ sequence_ $ map vertex $
-  [ Vertex2 (-1) (-1), Vertex2 (-1) 1
-  , Vertex2 1 1, Vertex2 1 (-1) :: Vertex2 Double
-  ]
-
-enterRect :: OrthoRect -> IO ()
-enterRect r = (newMatrix ColumnMajor [(orMaxX r - orMinX r) / 2, 0, 0, 0, 0, (orMaxY r - orMinY r) / 2, 0, 0, 0, 0, 1, 0, (orMaxX r + orMinX r) / 2, (orMaxY r + orMinY r) / 2, 0, 1] :: IO (GLmatrix Double)) >>= multMatrix
-
-aspect :: OrthoRect -> Double
-aspect r = (orMaxY r - orMinY r) / (orMaxX r - orMinX r)

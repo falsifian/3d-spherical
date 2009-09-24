@@ -78,7 +78,24 @@ display_universe_once state =
 			     color (Color3 0 0 1 :: Color3 Double)
 			     sphere 0.3
 
+       -- The Torus
+       color (Color3 0.5 0.5 0.5 :: Color3 Double)
+       theTorus
+
        sequence_ $ map draw_ft world_arch
+
+theTorus :: IO ()
+theTorus =
+    let nGridLines = 101
+        fromParams a b = Vertex4 (cos (a*2*pi)) (sin (a*2*pi)) (cos (b*2*pi)) (sin (b*2*pi)) :: Vertex4 Double
+    in
+    sequence_ 
+    [ renderPrimitive QuadStrip $ sequence_ $ map vertex $ concat
+        [ [fromParams a b, fromParams (a + 1/nGridLines) b]
+        | b <- [0,1/nGridLines..1]
+        ]
+    | a <- [0,1/nGridLines..1]
+    ]
 
 swap_wx :: IO ()
 swap_wx = (newMatrix ColumnMajor [0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0] :: IO (GLmatrix Double)) >>= multMatrix

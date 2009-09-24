@@ -131,13 +131,18 @@ defaultOSD =
     OSD { osdRect = OR (-1) 1 (-1) (-1/2)
         , osdBackgroundColour = Color4 0 0 0 0.5
         , osdPanelColour = osdBackgroundColour defaultOSD
-        , osdPanels = [(OR (-7/8) (-5/8) (-1/2) (1/2), jumpPanel)]
+        , osdPanels =
+            -- TODO: use aspect ratio
+            [ (OR (-7/8) (-5/8) (-1/2) (1/2), jumpPanel)
+            , (OR (-3/8) (3/8) (-1/2) (1/2), posPanel)
+            ]
         }
 
-jumpPanel :: Double -> State -> IO ()
+jumpPanel, posPanel :: Double -> State -> IO ()
+
 jumpPanel heightOverWidth state =
     if on_a_floor state
-        then do color (Color4 1 0 0 1 :: Color4 Double)
+        then do color (Color3 1 0 0 :: Color3 Double)
                 renderPrimitive Quads
                   $ sequence_ 
                   $ map vertex
@@ -145,6 +150,13 @@ jumpPanel heightOverWidth state =
                   , Vertex2 (1/2) (1/2), Vertex2 (1/2) (-1/2) :: Vertex2 Double
                   ]
         else return ()
+
+posPanel heightOverWidth state = preservingMatrix $
+    do -- TODO: use aspect ratio
+       color (Color3 1 0 0 :: Color3 Double)
+       translate (Vector3 (-1) 0 0 :: Vector3 Double)
+       scale (1/1500) (1/125) (1::Double)
+       renderString Roman (show (player_pos state))
 
 fill :: IO ()
 fill = renderPrimitive Quads $ sequence_ $ map vertex $

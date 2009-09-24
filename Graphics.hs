@@ -1,5 +1,6 @@
 module Graphics
-( display
+(   initDisplay
+,   display
 ) where
 
 import Architecture hiding (color)
@@ -10,11 +11,18 @@ import Graphics.Rendering.OpenGL.GL
 import Graphics.UI.GLUT
 import Math
 
-set_projection_matrix :: Vec4 -> Vec4 -> Vec4 -> Vec4 -> IO ()
-set_projection_matrix pos fwd up right =
+data OrthoRect = OR { orMinX, orMaxX, orMinY, orMaxY :: Double }
+
+data OSD =
+    OSD { osdRect :: OrthoRect
+        , osdBackgroundColour, osdPanelColour :: Color4 Double
+        , osdPanels :: [(OrthoRect, Double -> State -> IO ())]
+        }
+
+set_matrix :: Vec4 -> Vec4 -> Vec4 -> Vec4 -> IO ()
+set_matrix pos fwd up right =
     -- The camera is sitting at the z pole looking toward the w pole.
-    do matrixMode $= Projection
-       loadIdentity
+    do loadIdentity
        scale (1 :: GLfloat) 1 (-1e-5)
 
        -- At this point, the camera is sitting at the z pole looking toward the
@@ -24,24 +32,28 @@ set_projection_matrix pos fwd up right =
        -- orthogonal to -w and to pos.
        
        (newMatrix RowMajor ([right, up, pos, fwd] >>= coords) :: IO (GLmatrix Double)) >>= multMatrix
-
-       matrixMode $= Modelview 0
     where
         coords (V4 x y z w) = [x, y, z, w]
+
+initDisplay :: IO ()
+initDisplay =
+    do -- TODO: Things might go faster if blending is only enabled for the parts that need it.
+       blend $= Enabled
+       blendFunc $= (SrcAlpha, OneMinusSrcAlpha)
 
 display :: IORef State -> IO ()
 display state_ref =
     do state <- readIORef state_ref
        display_universe_twice state
-       display_osd state
+       display_osd defaultOSD state
        swapBuffers
 
 display_universe_twice :: State -> IO ()
 display_universe_twice state =
     do depthFunc $= Just Less
        clear [ColorBuffer, DepthBuffer]
-       set_projection_matrix (player_pos state) (player_fwd state) (player_up (state_calc state)) (player_right (state_calc state))
        matrixMode $= Projection
+       set_matrix (player_pos state) (player_fwd state) (player_up (state_calc state)) (player_right (state_calc state))
        scale4 (-1) (-1) (-1) (-1::Double)
        matrixMode $= Modelview 0
        display_universe_once state
@@ -50,6 +62,9 @@ display_universe_twice state =
        matrixMode $= Modelview 0
        clear [DepthBuffer]
        display_universe_once state
+       matrixMode $= Projection
+       loadIdentity
+       matrixMode $= Modelview 0
 
 display_universe_once :: State -> IO ()
 display_universe_once state =
@@ -72,20 +87,22 @@ display_universe_once state =
 
        sequence_ $ map draw_ft world_arch
 
-display_osd :: State -> IO ()
-display_osd state =
+display_osd :: OSD -> State -> IO ()
+display_osd osd state =
+    let displayPanel (rect, panel) = preservingMatrix $
+            do enterRect rect
+               color (osdPanelColour osd)
+               fill
+               panel (aspect (osdRect osd) * aspect rect) state
+    in preservingMatrix $
     do depthFunc $= Nothing
        matrixMode $= Projection
        loadIdentity
        matrixMode $= Modelview 0
-       if on_a_floor state
-           then do color (Color3 1 1 0 :: Color3 Double)
-                   renderPrimitive Quads (sequence_ (map vertex mostly_q))
-           else return ()
-    where
-        mostly_q, really_q :: [Vertex3 GLdouble]
-        mostly_q = [Vertex3 0.1 0.1 0, Vertex3 0.1 0.2 0, Vertex3 0.2 0.2 0, Vertex3 0.2 0.1 0]
-        really_q = [Vertex3 0.3 0.1 0, Vertex3 0.3 0.2 0, Vertex3 0.4 0.2 0, Vertex3 0.4 0.1 0]
+       enterRect (osdRect osd)
+       color (osdBackgroundColour osd)
+       fill
+       sequence_ (map displayPanel (osdPanels osd))
 
 swap_wx :: IO ()
 swap_wx = (newMatrix ColumnMajor [0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0] :: IO (GLmatrix Double)) >>= multMatrix
@@ -108,3 +125,35 @@ sphere radius = -- radius is the radius in radians
                 -- about the w pole, so we just let GLU do this for us.
                 let euclid_radius = tan radius in
                 renderQuadric (QuadricStyle Nothing NoTextureCoordinates Outside FillStyle) (Sphere euclid_radius 100 100)
+
+defaultOSD :: OSD
+defaultOSD =
+    OSD { osdRect = OR (-1) 1 (-1) (-1/2)
+        , osdBackgroundColour = Color4 0 0 0 0.5
+        , osdPanelColour = osdBackgroundColour defaultOSD
+        , osdPanels = [(OR (-7/8) (-5/8) (-1/2) (1/2), jumpPanel)]
+        }
+
+jumpPanel :: Double -> State -> IO ()
+jumpPanel heightOverWidth state =
+    if on_a_floor state
+        then do color (Color4 1 0 0 1 :: Color4 Double)
+                renderPrimitive Quads
+                  $ sequence_ 
+                  $ map vertex
+                  [ Vertex2 (-1/2) (-1/2), Vertex2 (-1/2) (1/2)
+                  , Vertex2 (1/2) (1/2), Vertex2 (1/2) (-1/2) :: Vertex2 Double
+                  ]
+        else return ()
+
+fill :: IO ()
+fill = renderPrimitive Quads $ sequence_ $ map vertex $
+  [ Vertex2 (-1) (-1), Vertex2 (-1) 1
+  , Vertex2 1 1, Vertex2 1 (-1) :: Vertex2 Double
+  ]
+
+enterRect :: OrthoRect -> IO ()
+enterRect r = (newMatrix ColumnMajor [(orMaxX r - orMinX r) / 2, 0, 0, 0, 0, (orMaxY r - orMinY r) / 2, 0, 0, 0, 0, 1, 0, (orMaxX r + orMinX r) / 2, (orMaxY r + orMinY r) / 2, 0, 1] :: IO (GLmatrix Double)) >>= multMatrix
+
+aspect :: OrthoRect -> Double
+aspect r = (orMaxY r - orMinY r) / (orMaxX r - orMinX r)

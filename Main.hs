@@ -16,6 +16,7 @@ main = do args_after_glut <- getArgs >>= initialize program_name
           state_ref <- newIORef initial_state
           displayCallback $= display state_ref
           keyboardMouseCallback $= Just (keyboard_mouse_callback state_ref)
+          initDisplay
           fix (\f -> modifyIORef state_ref update >> postRedisplay Nothing >> addTimerCallback 50 f)
           mainLoop
 

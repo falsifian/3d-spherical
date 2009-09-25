@@ -9,6 +9,7 @@ module Engine
 import Architecture
 import Constants
 import qualified Data.Set as Set
+import qualified Graphics.Rendering.OpenGL.GL as GL
 import List
 import Math
 import Maybe
@@ -20,6 +21,7 @@ data State = State { player_pos, player_fwd :: Vec4
                    , player_vert_v :: Double
                    , on_a_floor, hover, hover_released :: Bool
                    , keys :: Set.Set Key
+                   , worldDisplayList :: GL.DisplayList
                    , state_calc :: StateCalc
                    }
 
@@ -27,7 +29,7 @@ data StateCalc = SC { player_up, player_right :: Vec4
                     }
 
 initial_state :: State
-initial_state = complete_state $ State (Math.normalize (V4 (tan (2 * bottom_sphere_radius + player_height)) 0 0 (-1))) (V4 0 0 1 0) 0 False False False (Set.empty) undefined
+initial_state = complete_state $ State (Math.normalize (V4 (tan (2 * bottom_sphere_radius + player_height)) 0 0 (-1))) (V4 0 0 1 0) 0 False False False (Set.empty) undefined undefined
 
 orthonormal :: (IPVector v) => [v] -> Bool
 orthonormal vs = and [abs (normSqr x - 1) < 1e-9 | x <- vs] && and [case xs of [] -> True; h : t -> and [abs (h @. y) < 1e-9 | y <- t] | xs <- tails vs]

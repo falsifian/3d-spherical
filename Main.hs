@@ -13,10 +13,10 @@ main = do args_after_glut <- getArgs >>= initialize program_name
           initialDisplayMode $= [DoubleBuffered, WithDepthBuffer]
           initialWindowSize $= window_size
           window <- createWindow window_title
-          state_ref <- newIORef initial_state
+          state <- initDisplay initial_state
+          state_ref <- newIORef state
           displayCallback $= display state_ref
           keyboardMouseCallback $= Just (keyboard_mouse_callback state_ref)
-          initDisplay
           fix (\f -> modifyIORef state_ref update >> postRedisplay Nothing >> addTimerCallback 50 f)
           mainLoop
 

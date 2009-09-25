@@ -12,11 +12,15 @@ import Graphics.UI.GLUT
 import GraphicsUtil
 import OSD
 
-initDisplay :: IO ()
-initDisplay =
-    do -- TODO: Things might go faster if blending is only enabled for the parts that need it.
+initDisplay :: State -> IO State
+initDisplay state =
+    do worldDisplayList <- defineNewList Compile display_static_universe
+
+       -- TODO: Things might go faster if blending is only enabled for the parts that need it.
        blend $= Enabled
        blendFunc $= (SrcAlpha, OneMinusSrcAlpha)
+
+       return (state {worldDisplayList = worldDisplayList})
 
 display :: IORef State -> IO ()
 display state_ref =
@@ -43,8 +47,8 @@ display_universe_twice state =
        loadIdentity
        matrixMode $= Modelview 0
 
-display_universe_once :: State -> IO ()
-display_universe_once state =
+display_static_universe :: IO ()
+display_static_universe =
     do -- bottom sphere (-w pole)
        preservingMatrix $ do scale4 1 1 1 (-1::Double)
 			     color (Color3 1 1 1 :: Color3 Double)
@@ -67,6 +71,9 @@ display_universe_once state =
        theTorus
 
        sequence_ $ map draw_ft world_arch
+
+display_universe_once :: State -> IO ()
+display_universe_once state = callList (worldDisplayList state)
 
 theTorus :: IO ()
 theTorus =

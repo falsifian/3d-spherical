@@ -2,7 +2,7 @@ module Math where
 
 import qualified Graphics.Rendering.OpenGL.GL as GL
 
-infixl 7 .*, ./
+infixl 7 .*, ./, @*
 infixl 6 @+, @-
 
 class Vector v where
@@ -27,6 +27,10 @@ class (Vector v) => NormVector v where
     normSqr = (^ 2) . norm
     normalize :: v -> v
     normalize x = x ./ norm x
+
+class (Vector v) => Ring v where
+    unit :: v
+    (@*) :: v -> v -> v
 
 data Vec3 = V3 !Double !Double !Double deriving Show
 
@@ -53,6 +57,14 @@ instance NormVector Vec3 where
 
 instance NormVector Vec4 where
     normSqr (V4 x y z w) = x ^ 2 + y ^ 2 + z ^ 2 + w ^ 2
+
+instance Ring Vec3 where
+    unit = V3 1 1 1
+    V3 x0 x1 x2 @* V3 y0 y1 y2 = V3 (x0 * y0) (x1 * y1) (x2 * y2)
+
+instance Ring Vec4 where
+    unit = V4 1 1 1 1
+    V4 x0 x1 x2 x3 @* V4 y0 y1 y2 y3 = V4 (x0 * y0) (x1 * y1) (x2 * y2) (x3 * y3)
 
 zero_w :: Vec3 -> Vec4
 zero_w (V3 x y z) = V4 x y z 0
@@ -93,6 +105,9 @@ sph_dist x y = acos (1 - normSqr (x @- y) / 2)
 
 vec4_to_vertex4 :: Vec4 -> GL.Vertex4 Double
 vec4_to_vertex4 (V4 x y z w) = GL.Vertex4 x y z w
+
+vec4_to_color4 :: Vec4 -> GL.Color4 Double
+vec4_to_color4 (V4 r g b a) = GL.Color4 r g b a
 
 lose_w :: Vec4 -> Vec3
 lose_w (V4 x y z _) = V3 x y z

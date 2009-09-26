@@ -10,6 +10,7 @@ import Engine
 import Graphics.Rendering.OpenGL.GL
 import Graphics.UI.GLUT
 import GraphicsUtil
+import Math
 import OSD
 
 initDisplay :: State -> IO State
@@ -67,7 +68,6 @@ display_static_universe =
 			     sphere 0.3
 
        -- The Torus
-       color (Color3 0.5 0.5 0.5 :: Color3 Double)
        theTorus
 
        sequence_ $ map draw_ft world_arch
@@ -78,10 +78,16 @@ display_universe_once state = callList (worldDisplayList state)
 theTorus :: IO ()
 theTorus =
     let nGridLines = 101
-        fromParams a b = Vertex4 (cos (a*2*pi)) (sin (a*2*pi)) (cos (b*2*pi)) (sin (b*2*pi)) :: Vertex4 Double
+        fromParams a b =
+            let x0 = cos (a*2*pi) / sqrt 2
+                x1 = sin (a*2*pi) / sqrt 2
+                x2 = cos (b*2*pi) / sqrt 2
+                x3 = sin (b*2*pi) / sqrt 2
+            in (V4 x0 x1 x2 x3, V4 x2 x3 (-x0) (-x1), material)
+        material = Material zvec (V4 0.5 0.5 0.5 1)
     in
     sequence_ 
-    [ renderPrimitive QuadStrip $ sequence_ $ map vertex $ concat
+    [ renderPrimitive QuadStrip $ drawWithIllumination universeLights $ concat
         [ [fromParams a b, fromParams (a + 1/nGridLines) b]
         | b <- [0,1/nGridLines..1]
         ]

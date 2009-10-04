@@ -1,6 +1,7 @@
 module GraphicsUtil
 (   Material(..)
 ,   diffuseReflection
+,   calcIllumination
 ,   drawWithIllumination
 ,   scale4
 ,   swap_wx
@@ -20,6 +21,14 @@ diffuseReflection lightPos objectPos objectNormal =
         flatten v = v @- (objectPos .* (objectPos @. v))
     in abs (objectNormal @. lightDir)
 
+calcIllumination :: [(Vec4, Vec3)] -> Vec4 -> Vec4 -> Material -> Color4 Double
+calcIllumination lightSources objectPos objectNormal material =
+    let extendWithOne (V3 x y z) = V4 x y z 1
+        diffuseSum = vsum [ lightColour .* diffuseReflection lightPos objectPos objectNormal
+                          | (lightPos, lightColour) <- lightSources
+                          ]
+    in vec4_to_color4 $ emitColour material @+ extendWithOne diffuseSum @* diffuseColour material
+
 -- drawWithIllumination is a convenience function which decides the
 -- illumination of every vertex using diffuseReflection.  This might be
 -- extended, for example to use shaders for new kinds of lights.
@@ -27,14 +36,8 @@ diffuseReflection lightPos objectPos objectNormal =
 -- Note: OpenGL's transformation matrices are ignored here.
 drawWithIllumination :: [(Vec4, Vec3)] -> [(Vec4, Vec4, Material)] -> IO ()
 drawWithIllumination lightSources vertices =
-    let extendWithOne (V3 x y z) = V4 x y z 1
-    in
     sequence_
-      [ let diffuseSum = vsum [ lightColour .* diffuseReflection lightPos objectPos objectNormal
-                              | (lightPos, lightColour) <- lightSources
-                              ]
-        in
-        do color $ vec4_to_color4 $ emitColour material @+ extendWithOne diffuseSum @* diffuseColour material
+      [ do color $ calcIllumination lightSources objectPos objectNormal material
            vertex $ vec4_to_vertex4 objectPos
       | (objectPos, objectNormal, material) <- vertices
       ]

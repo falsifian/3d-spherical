@@ -6,7 +6,10 @@ module Graphics
 import Architecture hiding (color)
 import Constants
 import Data.IORef
+import Data.Int
 import Engine
+import Foreign.Marshal.Alloc
+import Foreign.Storable
 import Graphics.Rendering.OpenGL.GL
 import Graphics.UI.GLUT
 import GraphicsUtil
@@ -15,13 +18,28 @@ import OSD
 
 initDisplay :: State -> IO State
 initDisplay state =
-    do worldDisplayList <- defineNewList Compile display_static_universe
+   do -- TODO: Things might go faster if blending is only enabled for the parts that need it.
+      blend $= Enabled
+      blendFunc $= (SrcAlpha, OneMinusSrcAlpha)
+      torusTexture <- makeTorusTexture
 
-       -- TODO: Things might go faster if blending is only enabled for the parts that need it.
-       blend $= Enabled
-       blendFunc $= (SrcAlpha, OneMinusSrcAlpha)
+      worldDisplayList <- defineNewList Compile (display_static_universe torusTexture)
 
-       return (state {worldDisplayList = worldDisplayList})
+      return (state {worldDisplayList = worldDisplayList, torusTexture = torusTexture})
+
+makeTorusTexture :: IO TextureObject
+makeTorusTexture =
+    do rowAlignment Unpack $= 1
+       [torusTexture] <- genObjectNames 1
+       textureBinding Texture2D $= Just torusTexture
+       textureWrapMode Texture2D S $= (Repeated, Repeat) -- TODO:  I don't completely understand what each of these two parameters do.
+       textureWrapMode Texture2D T $= (Repeated, Repeat) -- TODO:  ditto
+       textureFilter Texture2D $= ((Nearest, Nothing), Nearest) -- TODO:  Is this needed?  Is this too slow?  What does the Nothing do?
+       pdPtr <- mallocBytes 36
+       let imageData = concat [[0, 0, 0, 127-x] | x <- map (127*) [1, 1, 1, 1, 0, 0, 1, 0, 0] :: [Int8]]
+       sequence_ [pokeElemOff pdPtr i x | (i, x) <- zip [0 ..] imageData]
+       texImage2D Nothing NoProxy 0 RGBA' (TextureSize2D 3 3) 0 (PixelData RGBA Byte pdPtr)
+       return torusTexture
 
 display :: IORef State -> IO ()
 display state_ref =
@@ -48,8 +66,8 @@ display_universe_twice state =
        loadIdentity
        matrixMode $= Modelview 0
 
-display_static_universe :: IO ()
-display_static_universe =
+display_static_universe :: TextureObject -> IO ()
+display_static_universe torusTexture =
     do -- bottom sphere (-w pole)
        preservingMatrix $ do scale4 1 1 1 (-1::Double)
 			     color (Color3 1 1 1 :: Color3 Double)
@@ -68,31 +86,41 @@ display_static_universe =
 			     sphere 0.3
 
        -- The Torus
-       theTorus
+       theTorus torusTexture
 
        sequence_ $ map draw_ft world_arch
 
 display_universe_once :: State -> IO ()
-display_universe_once state = callList (worldDisplayList state)
+display_universe_once state =
+    do callList (worldDisplayList state)
 
-theTorus :: IO ()
-theTorus =
+theTorus :: TextureObject -> IO ()
+theTorus torusTexture =
     let nGridLines = 101
+        textureFrequency = 25
         fromParams a b =
             let x0 = cos (a*2*pi) / sqrt 2
                 x1 = sin (a*2*pi) / sqrt 2
                 x2 = cos (b*2*pi) / sqrt 2
                 x3 = sin (b*2*pi) / sqrt 2
-            in (V4 x0 x1 x2 x3, V4 x2 x3 (-x0) (-x1), material)
+            in
+            do texCoord (TexCoord2 (a * textureFrequency) (b * textureFrequency) :: TexCoord2 Double)
+               color $ calcIllumination universeLights (V4 x0 x1 x2 x3) (V4 x2 x3 (-x0) (-x1)) material
+               vertex (Vertex4 x0 x1 x2 x3)
+              
         material = Material zvec (V4 0.5 0.5 0.5 1)
     in
-    sequence_ 
-    [ renderPrimitive QuadStrip $ drawWithIllumination universeLights $ concat
-        [ [fromParams a b, fromParams (a + 1/nGridLines) b]
-        | b <- [0,1/nGridLines..1]
-        ]
-    | a <- [0,1/nGridLines..1]
-    ]
+    do texture Texture2D $= Enabled
+       textureFunction $= Decal
+       textureBinding Texture2D $= Just torusTexture
+       sequence_ 
+         [ renderPrimitive QuadStrip $ sequence_ $ concat
+             [ [fromParams a b, fromParams (a + 1/nGridLines) b]
+             | b <- [0,1/nGridLines..1]
+             ]
+         | a <- [0,1/nGridLines..1]
+         ]
+       texture Texture2D $= Disabled
 
 sphere :: GLdouble -> IO ()
 sphere radius = -- radius is the radius in radians

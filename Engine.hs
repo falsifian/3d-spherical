@@ -23,13 +23,14 @@ data State = State { player_pos, player_fwd :: Vec4
                    , keys :: Set.Set Key
                    , worldDisplayList :: GL.DisplayList
                    , state_calc :: StateCalc
+                   , torusTexture :: GL.TextureObject
                    }
 
 data StateCalc = SC { player_up, player_right :: Vec4
                     }
 
 initial_state :: State
-initial_state = complete_state $ State (Math.normalize (V4 (tan (2 * bottom_sphere_radius + player_height)) 0 0 (-1))) (V4 0 0 1 0) 0 False False False (Set.empty) undefined undefined
+initial_state = complete_state $ State (Math.normalize (V4 (tan (2 * bottom_sphere_radius + player_height)) 0 0 (-1))) (V4 0 0 1 0) 0 False False False (Set.empty) undefined undefined undefined
 
 orthonormal :: (IPVector v) => [v] -> Bool
 orthonormal vs = and [abs (normSqr x - 1) < 1e-9 | x <- vs] && and [case xs of [] -> True; h : t -> and [abs (h @. y) < 1e-9 | y <- t] | xs <- tails vs]

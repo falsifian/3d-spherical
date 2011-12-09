@@ -1,0 +1,33 @@
+====
+Building
+====
+
+You will need:
+- A Haskell compiler (only tested with GHC).
+- OpenGL and GLUT Haskell libraries.
+
+To build:
+
+  runhaskell Setup.hs configure
+  runhaskell Setup.hs build
+
+On my setup, this puts a binary at:
+
+  dist/build/3d-spherical/3d-spherical
+
+Optional:
+
+  runhaskell Setup.hs install
+
+====
+Using
+====
+
+Use the numeric keypad.  If you don't like this, you can edit the "kmap" function in Main.hs.
+
+keys:
+4568 - move around
+space - jump
++ - toggle hover mode
+79 - up and down in hover mode
+- - toggle visibility of the big torus  (I think it's the same as what's described at http://www.math.union.edu/~dpvc/tfb/icms-poster/torus/welcome.html )

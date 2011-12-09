@@ -38,6 +38,7 @@ kmap '0' = Just KJump
 kmap '7' = Just KDown
 kmap '9' = Just KUp
 kmap '+' = Just KHover
+kmap '-' = Just KTorus
 kmap _ = Nothing
 
 fix :: (a -> a) -> a

@@ -23,9 +23,11 @@ initDisplay state =
       blendFunc $= (SrcAlpha, OneMinusSrcAlpha)
       torusTexture <- makeTorusTexture
 
-      worldDisplayList <- defineNewList Compile (display_static_universe torusTexture)
+      worldDisplayList <- defineNewList Compile display_static_universe
+      
+      torusDisplayList <- defineNewList Compile (theTorus torusTexture)
 
-      return (state {worldDisplayList = worldDisplayList, torusTexture = torusTexture})
+      return (state {worldDisplayList = worldDisplayList, torusDisplayList = torusDisplayList, torusTexture = torusTexture})
 
 makeTorusTexture :: IO TextureObject
 makeTorusTexture =
@@ -66,8 +68,8 @@ display_universe_twice state =
        loadIdentity
        matrixMode $= Modelview 0
 
-display_static_universe :: TextureObject -> IO ()
-display_static_universe torusTexture =
+display_static_universe :: IO ()
+display_static_universe =
     do -- bottom sphere (-w pole)
        preservingMatrix $ do scale4 1 1 1 (-1::Double)
 			     color (Color3 1 1 1 :: Color3 Double)
@@ -85,14 +87,12 @@ display_static_universe torusTexture =
 			     color (Color3 0 0 1 :: Color3 Double)
 			     sphere 0.3
 
-       -- The Torus
-       theTorus torusTexture
-
        sequence_ $ map draw_ft world_arch
 
 display_universe_once :: State -> IO ()
 display_universe_once state =
     do callList (worldDisplayList state)
+       if show_torus state then callList (torusDisplayList state) else return ()
 
 theTorus :: TextureObject -> IO ()
 theTorus torusTexture =

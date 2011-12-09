@@ -15,13 +15,13 @@ import Math
 import Maybe
 import Monad
 
-data Key = KFwd | KBwd | KRight | KLeft | KJump | KHover | KUp | KDown deriving (Eq, Ord)
+data Key = KFwd | KBwd | KRight | KLeft | KJump | KHover | KUp | KDown | KTorus deriving (Eq, Ord)
 
 data State = State { player_pos, player_fwd :: Vec4
                    , player_vert_v :: Double
-                   , on_a_floor, hover, hover_released :: Bool
+                   , on_a_floor, hover, hover_released, show_torus, show_torus_released :: Bool
                    , keys :: Set.Set Key
-                   , worldDisplayList :: GL.DisplayList
+                   , worldDisplayList, torusDisplayList :: GL.DisplayList
                    , state_calc :: StateCalc
                    , torusTexture :: GL.TextureObject
                    }
@@ -30,7 +30,7 @@ data StateCalc = SC { player_up, player_right :: Vec4
                     }
 
 initial_state :: State
-initial_state = complete_state $ State (Math.normalize (V4 (tan (2 * bottom_sphere_radius + player_height)) 0 0 (-1))) (V4 0 0 1 0) 0 False False False (Set.empty) undefined undefined undefined
+initial_state = complete_state $ State (Math.normalize (V4 (tan (2 * bottom_sphere_radius + player_height)) 0 0 (-1))) (V4 0 0 1 0) 0 False False False False False (Set.empty) undefined undefined undefined undefined
 
 orthonormal :: (IPVector v) => [v] -> Bool
 orthonormal vs = and [abs (normSqr x - 1) < 1e-9 | x <- vs] && and [case xs of [] -> True; h : t -> and [abs (h @. y) < 1e-9 | y <- t] | xs <- tails vs]
@@ -97,5 +97,7 @@ update state@(State { player_pos = pos, player_fwd = fwd, state_calc = SC { play
                 else player_vert_v state - gravity * step_size
         new_hover = hover state /= (Set.member KHover (keys state) && hover_released state)
         new_hover_released = not (Set.member KHover (keys state))
-        ret = complete_state (state { player_pos = new_pos, player_fwd = new_fwd, player_vert_v = new_vert_v, on_a_floor = isJust floor_height, hover = new_hover, hover_released = new_hover_released })
+        new_show_torus = show_torus state /= (Set.member KTorus (keys state) && show_torus_released state)
+        new_show_torus_released = not (Set.member KTorus (keys state))
+        ret = complete_state (state { player_pos = new_pos, player_fwd = new_fwd, player_vert_v = new_vert_v, on_a_floor = isJust floor_height, hover = new_hover, hover_released = new_hover_released, show_torus = new_show_torus, show_torus_released = new_show_torus_released })
     in seq (verify_state ret) ret -- TODO: get rid of expensive state verification

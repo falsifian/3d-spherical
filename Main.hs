@@ -6,7 +6,7 @@ import qualified Data.Set as Set
 import Engine
 import Graphics
 import Graphics.UI.GLUT
-import System
+import System.Environment
 
 main :: IO ()
 main = do args_after_glut <- getArgs >>= initialize program_name

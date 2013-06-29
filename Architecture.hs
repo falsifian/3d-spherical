@@ -1,9 +1,9 @@
 module Architecture where
 
 import Constants
+import Data.List
 import qualified Graphics.Rendering.OpenGL.GL as GL
 import GraphicsUtil
-import List
 import Math
 
 data Floating_Triangle = FTri { height :: Double

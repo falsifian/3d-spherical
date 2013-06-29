@@ -8,12 +8,12 @@ module Engine
 
 import Architecture
 import Constants
+import Control.Monad
+import Data.List
+import Data.Maybe
 import qualified Data.Set as Set
 import qualified Graphics.Rendering.OpenGL.GL as GL
-import List
 import Math
-import Maybe
-import Monad
 
 data Key = KFwd | KBwd | KRight | KLeft | KJump | KHover | KUp | KDown | KTorus deriving (Eq, Ord)
 

@@ -2,22 +2,15 @@
 Building
 ====
 
-You will need:
-- A Haskell compiler (only tested with GHC).
-- OpenGL and GLUT Haskell libraries.
+You will need cabal-install and a Haskell compiler. (The only complire I've tested is ghc.)
 
-To build:
+Install it with
 
-  runhaskell Setup.hs configure
-  runhaskell Setup.hs build
+cabal install .:3d-spherical
 
-On my setup, this puts a binary at:
+Or just run it directly with
 
-  dist/build/3d-spherical/3d-spherical
-
-Optional:
-
-  runhaskell Setup.hs install
+cabal run .:3d-spherical
 
 ====
 Using

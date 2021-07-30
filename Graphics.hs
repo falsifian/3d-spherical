@@ -40,7 +40,7 @@ makeTorusTexture =
        pdPtr <- mallocBytes 36
        let imageData = concat [[0, 0, 0, 127-x] | x <- map (127*) [1, 1, 1, 1, 0, 0, 1, 0, 0] :: [Int8]]
        sequence_ [pokeElemOff pdPtr i x | (i, x) <- zip [0 ..] imageData]
-       texImage2D Nothing NoProxy 0 RGBA' (TextureSize2D 3 3) 0 (PixelData RGBA Byte pdPtr)
+       texImage2D Texture2D NoProxy 0 RGBA' (TextureSize2D 3 3) 0 (PixelData RGBA Byte pdPtr)
        return torusTexture
 
 display :: IORef State -> IO ()

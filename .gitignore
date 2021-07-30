@@ -1,4 +1,1 @@
-*.hi
-*.o
-/Main
-/dist
+/dist-newstyle

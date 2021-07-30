@@ -5,4 +5,5 @@ version: 0
 
 Executable 3d-spherical
     Main-is: Main.hs
-    Build-Depends: base, containers, haskell98, GLUT, OpenGL
+    Other-Modules: Architecture Constants Engine Graphics GraphicsUtil Math OSD
+    Build-Depends: base, containers, GLUT, OpenGL
